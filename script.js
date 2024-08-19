@@ -1,5 +1,4 @@
-// Le code Firebase est déjà initialisé dans `index.html`, donc pas besoin de ré-importer ici.
-
+// Configuration initiale
 let counters = {
     cafes: 0,
     cigarettes: 0,
@@ -12,7 +11,7 @@ let counters = {
 
 let history = [];
 
-// Initialize the UI with Bootstrap components
+// Initialisation de l'interface utilisateur
 function initUI() {
     const items = ['cafes', 'cigarettes', 'bieres', 'junkfood', 'cocazero', 'painblanc'];
     const itemNames = ['Cafés', 'Cigarettes', 'Bières', 'Junk Food', 'Coca Zéro', 'Pain Blanc'];
@@ -49,20 +48,47 @@ function initUI() {
     document.getElementById('currentDate').textContent = `Date: ${new Date().toLocaleDateString()}`;
 }
 
-// Save the counters to Firebase
+// Sauvegarder les compteurs dans Firebase
 function saveToFirebase() {
     firebase.database().ref('counters').set(counters);
     console.log('Counters saved to Firebase:', counters);
 }
 
-// Save the history to Firebase
+// Sauvegarder l'historique dans Firebase
 function saveHistoryToFirebase() {
-    const latestHistory = history[history.length - 1];
-    firebase.database().ref('history').push(latestHistory);
-    console.log('Latest history item saved to Firebase:', latestHistory);
+    const today = new Date().toDateString(); // Récupère la date actuelle
+    let historyItem = history.find(item => new Date(item.date).toDateString() === today);
+
+    if (historyItem) {
+        // Si un historique pour la date actuelle existe, mettez à jour les compteurs
+        historyItem.cafes += counters.cafes;
+        historyItem.cigarettes += counters.cigarettes;
+        historyItem.bieres += counters.bieres;
+        historyItem.junkfood += counters.junkfood;
+        historyItem.cocazero += counters.cocazero;
+        historyItem.painblanc += counters.painblanc;
+        historyItem.totalPoints = calculateTotalPoints(historyItem);
+    } else {
+        // Sinon, créez une nouvelle entrée
+        historyItem = {
+            date: today,
+            cafes: counters.cafes,
+            cigarettes: counters.cigarettes,
+            bieres: counters.bieres,
+            junkfood: counters.junkfood,
+            cocazero: counters.cocazero,
+            painblanc: counters.painblanc,
+            totalPoints: counters.totalPoints
+        };
+        history.push(historyItem);
+    }
+
+    // Sauvegarder l'historique mis à jour dans Firebase
+    firebase.database().ref('history').set(history);
+    console.log('Latest history saved to Firebase:', historyItem);
 }
 
-// Load counters from Firebase
+// Charger les compteurs depuis Firebase
 function loadFromFirebase() {
     const countersRef = firebase.database().ref('counters');
     countersRef.on('value', (snapshot) => {
@@ -77,24 +103,24 @@ function loadFromFirebase() {
     });
 }
 
-// Load history from Firebase
+// Charger l'historique depuis Firebase
 function loadHistoryFromFirebase() {
     const historyRef = firebase.database().ref('history');
-    historyRef.on('value', (snapshot) => {
+    historyRef.once('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
             history = Object.values(data);
             console.log('History loaded from Firebase:', history);
-            displayHistory();
-            generateWeeklyReport(); // Générer un rapport hebdomadaire
-            calculateTrends(); // Calculate trends after loading history
+            displayHistory();  // Assurez-vous que cela affiche uniquement les données uniques
+            generateWeeklyReport(); // Par défaut, afficher le rapport hebdomadaire
+            calculateTrends(); // Calculer les tendances après le chargement de l'historique
         } else {
             console.log('No history data found in Firebase.');
         }
     });
 }
 
-// Update the UI based on the current counters
+// Mettre à jour l'interface utilisateur en fonction des compteurs actuels
 function updateUI() {
     Object.keys(counters).forEach(item => {
         if (item !== 'totalPoints') {
@@ -104,7 +130,7 @@ function updateUI() {
     document.getElementById('totalPoints').textContent = 'Total Points: ' + counters.totalPoints;
 }
 
-// Increment the counter for a specific item
+// Incrémenter le compteur pour un élément spécifique
 function increment(item) {
     counters[item]++;
     calculatePoints();
@@ -112,7 +138,7 @@ function increment(item) {
     updateUI();
 }
 
-// Decrement the counter for a specific item
+// Décrémenter le compteur pour un élément spécifique
 function decrement(item) {
     if (counters[item] > 0) {
         counters[item]--;
@@ -122,7 +148,7 @@ function decrement(item) {
     }
 }
 
-// Calculate the total points based on current counters
+// Calculer les points totaux en fonction des compteurs actuels
 function calculatePoints() {
     counters.totalPoints = (counters.cafes * 2) + 
                            (counters.cigarettes * 1) + 
@@ -132,7 +158,17 @@ function calculatePoints() {
                            (counters.painblanc * 3);
 }
 
-// Calculate trends (increase, decrease, or stable) based on the history
+// Calculer les points totaux pour un item d'historique spécifique
+function calculateTotalPoints(item) {
+    return (item.cafes * 2) + 
+           (item.cigarettes * 1) + 
+           (item.bieres * 10) + 
+           (item.junkfood * 20) + 
+           (item.cocazero * 5) + 
+           (item.painblanc * 3);
+}
+
+// Calculer les tendances (augmentation, diminution ou stable) en fonction de l'historique
 function calculateTrends() {
     if (history.length < 2) {
         document.getElementById('yesterdayTrend').textContent = "Not enough data";
@@ -159,7 +195,7 @@ function calculateTrends() {
     }
 }
 
-// Generate a weekly report using Chart.js
+// Générer un rapport hebdomadaire avec Chart.js
 function generateWeeklyReport() {
     const last7Days = history.slice(-7);
     const labels = last7Days.map(item => item.date);
@@ -188,7 +224,7 @@ function generateWeeklyReport() {
     });
 }
 
-// Filter history based on the selected period (week, month, quarter, year)
+// Filtrer l'historique en fonction de la période sélectionnée (semaine, mois, trimestre, année)
 function filterHistory(period) {
     const now = new Date();
     let startDate;
@@ -215,20 +251,26 @@ function filterHistory(period) {
     generateReport(filteredHistory);
 }
 
-// Display the filtered history
+// Afficher l'historique filtré
 function displayHistory(filteredHistory = history) {
     const historyDiv = document.getElementById('history');
     historyDiv.innerHTML = ''; // Clear the history display
+    let displayedDates = new Set(); // To track already displayed dates
+    
     filteredHistory.slice().reverse().forEach(item => {
-        console.log('Displaying history item:', item);
-        const historyItem = document.createElement('div');
-        historyItem.className = 'history-item';
-        historyItem.textContent = `${item.date}: ${item.totalPoints} points`;
-        historyDiv.appendChild(historyItem);
+        const itemDate = new Date(item.date).toDateString();
+        if (!displayedDates.has(itemDate)) {
+            console.log('Displaying history item:', item);
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.textContent = `${itemDate}: ${item.totalPoints} points`;
+            historyDiv.appendChild(historyItem);
+            displayedDates.add(itemDate); // Mark this date as displayed
+        }
     });
 }
 
-// Generate a report using Chart.js for the filtered history
+// Générer un rapport à l'aide de Chart.js pour l'historique filtré
 function generateReport(filteredHistory = history) {
     const labels = filteredHistory.map(item => item.date);
     const dataPoints = filteredHistory.map(item => item.totalPoints);
@@ -256,64 +298,13 @@ function generateReport(filteredHistory = history) {
     });
 }
 
-// Simulate data for August 16 and 17, 2024
-function simulatePreviousDayData() {
-    const dataFor16th = {
-        date: '2024-08-16',
-        cafes: Math.floor(Math.random() * 5) + 1,
-        cigarettes: Math.floor(Math.random() * 10) + 1,
-        bieres: Math.floor(Math.random() * 3) + 1,
-        junkfood: Math.floor(Math.random() * 2),
-        cocazero: Math.floor(Math.random() * 3),
-        painblanc: Math.floor(Math.random() * 4),
-        totalPoints: 0 // Will be calculated
-    };
-    dataFor16th.totalPoints = (dataFor16th.cafes * 2) + 
-                              (dataFor16th.cigarettes * 1) + 
-                              (dataFor16th.bieres * 10) + 
-                              (dataFor16th.junkfood * 20) + 
-                              (dataFor16th.cocazero * 5) + 
-                              (dataFor16th.painblanc * 3);
-
-    const dataFor17th = {
-        date: '2024-08-17',
-        cafes: Math.floor(Math.random() * 5) + 1,
-        cigarettes: Math.floor(Math.random() * 10) + 1,
-        bieres: Math.floor(Math.random() * 3) + 1,
-        junkfood: Math.floor(Math.random() * 2),
-        cocazero: Math.floor(Math.random() * 3),
-        painblanc: Math.floor(Math.random() * 4),
-        totalPoints: 0 // Will be calculated
-    };
-    dataFor17th.totalPoints = (dataFor17th.cafes * 2) + 
-                              (dataFor17th.cigarettes * 1) + 
-                              (dataFor17th.bieres * 10) + 
-                              (dataFor17th.junkfood * 20) + 
-                              (dataFor17th.cocazero * 5) + 
-                              (dataFor17th.painblanc * 3);
-
-    history.push(dataFor16th);
-    history.push(dataFor17th);
-    console.log('Simulated history items for 2024-08-16 and 2024-08-17:', dataFor16th, dataFor17th);
-    saveHistoryToFirebase();
-    saveHistoryToFirebase(); // Save both entries
-}
-
-// Reset the counters at midnight and save to history
+// Réinitialiser les compteurs à minuit et sauvegarder dans l'historique
 function resetDailyCounters() {
     const now = new Date();
     const lastResetDate = localStorage.getItem('lastResetDate');
 
     if (lastResetDate !== now.toDateString()) {
-        const historyItem = {
-            date: now.toDateString(),
-            ...counters
-        };
-        
-        history.push(historyItem);
-        console.log('Saving history item to Firebase:', historyItem);
-        saveHistoryToFirebase();
-        localStorage.setItem('lastResetDate', now.toDateString());
+        saveHistoryToFirebase(); // Sauvegarder l'historique avant de réinitialiser
 
         counters = {
             cafes: 0,
@@ -326,6 +317,7 @@ function resetDailyCounters() {
         };
 
         saveToFirebase();
+        localStorage.setItem('lastResetDate', now.toDateString());
         updateUI();
         displayHistory();
         generateReport();
@@ -333,9 +325,8 @@ function resetDailyCounters() {
     }
 }
 
-// Initialize the app
+// Initialiser l'application
 initUI();
 loadFromFirebase();
 loadHistoryFromFirebase();
-simulatePreviousDayData();  // Simulate data for August 16 and 17, 2024
-resetDailyCounters();
+resetDailyCounters(); // Assurez-vous que les compteurs sont réinitialisés à chaque début de journée
