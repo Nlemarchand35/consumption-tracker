@@ -306,6 +306,7 @@ function resetDailyCounters() {
     if (lastResetDate !== now.toDateString()) {
         saveHistoryToFirebase(); // Sauvegarder l'historique avant de réinitialiser
 
+        // Réinitialisation des compteurs
         counters = {
             cafes: 0,
             cigarettes: 0,
@@ -319,7 +320,7 @@ function resetDailyCounters() {
         saveToFirebase();
         localStorage.setItem('lastResetDate', now.toDateString());
         updateUI();
-        displayHistory();
+        displayHistory(); // Afficher l'historique mis à jour
         generateReport();
         calculateTrends();
     }
