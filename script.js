@@ -279,13 +279,16 @@ function filterHistory(period) {
     const filteredHistory = history.filter(item => new Date(item.date) >= startDate);
     console.log(`Filtered history for ${period}:`, filteredHistory);
 
-    // Assurez-vous de détruire le graphique avant de créer un nouveau
-    if (chartInstance) {
-        chartInstance.destroy();
-        chartInstance = null;  // Réinitialisez l'instance après la destruction
-    }
+    // Réinitialiser complètement le canvas
+    const canvas = document.getElementById('reportChart');
+    const parent = canvas.parentNode;
+    parent.removeChild(canvas);
 
-    displayHistory(filteredHistory);
+    const newCanvas = document.createElement('canvas');
+    newCanvas.id = 'reportChart';
+    parent.appendChild(newCanvas);
+
+    // Recréez le graphique sur le nouveau canvas
     generateReport(filteredHistory);
 }
 
@@ -314,12 +317,6 @@ function generateReport(filteredHistory = history) {
     const dataPoints = filteredHistory.map(item => item.totalPoints);
 
     const ctx = document.getElementById('reportChart').getContext('2d');
-
-    // Vérifiez si un graphique existe déjà, et s'il existe, détruisez-le
-    if (chartInstance) {
-        chartInstance.destroy();
-        chartInstance = null;  // Réinitialisez l'instance après la destruction
-    }
 
     chartInstance = new Chart(ctx, {
         type: 'line',
