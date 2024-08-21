@@ -50,8 +50,13 @@ function initUI() {
 
 // Sauvegarder les compteurs dans Firebase
 function saveToFirebase() {
-    firebase.database().ref('counters').set(counters);
-    console.log('Counters saved to Firebase:', counters);
+    firebase.database().ref('counters').set(counters)
+        .then(() => {
+            console.log('Counters saved to Firebase:', counters);
+        })
+        .catch(error => {
+            console.error('Error saving counters:', error);
+        });
 }
 
 // Sauvegarder l'historique dans Firebase
@@ -84,40 +89,53 @@ function saveHistoryToFirebase() {
     }
 
     // Sauvegarder l'historique mis à jour dans Firebase
-    firebase.database().ref('history').set(history);
-    console.log('Latest history saved to Firebase:', historyItem);
+    firebase.database().ref('history').set(history)
+        .then(() => {
+            console.log('Latest history saved to Firebase:', historyItem);
+        })
+        .catch(error => {
+            console.error('Error saving history:', error);
+        });
 }
 
 // Charger les compteurs depuis Firebase
 function loadFromFirebase() {
     const countersRef = firebase.database().ref('counters');
-    countersRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            counters = data;
-            console.log('Counters loaded from Firebase:', counters);
-            updateUI();
-        } else {
-            console.log('No counters data found in Firebase.');
-        }
-    });
+    countersRef.once('value')
+        .then(snapshot => {
+            const data = snapshot.val();
+            if (data) {
+                counters = data;
+                console.log('Counters loaded from Firebase:', counters);
+                updateUI();
+            } else {
+                console.log('No counters data found in Firebase.');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading counters:', error);
+        });
 }
 
 // Charger l'historique depuis Firebase
 function loadHistoryFromFirebase() {
     const historyRef = firebase.database().ref('history');
-    historyRef.once('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            history = Object.values(data);
-            console.log('History loaded from Firebase:', history);
-            displayHistory();  // Assurez-vous que cela affiche uniquement les données uniques
-            generateWeeklyReport(); // Par défaut, afficher le rapport hebdomadaire
-            calculateTrends(); // Calculer les tendances après le chargement de l'historique
-        } else {
-            console.log('No history data found in Firebase.');
-        }
-    });
+    historyRef.once('value')
+        .then(snapshot => {
+            const data = snapshot.val();
+            if (data) {
+                history = Object.values(data);
+                console.log('History loaded from Firebase:', history);
+                displayHistory();  // Affiche uniquement les données uniques
+                generateWeeklyReport(); // Par défaut, afficher le rapport hebdomadaire
+                calculateTrends(); // Calculer les tendances après le chargement de l'historique
+            } else {
+                console.log('No history data found in Firebase.');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading history:', error);
+        });
 }
 
 // Mettre à jour l'interface utilisateur en fonction des compteurs actuels
@@ -231,16 +249,19 @@ function filterHistory(period) {
 
     switch (period) {
         case 'week':
-            startDate = new Date(now.setDate(now.getDate() - 7));
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
             break;
         case 'month':
-            startDate = new Date(now.setMonth(now.getMonth() - 1));
+            startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
             break;
         case 'quarter':
-            startDate = new Date(now.setMonth(now.getMonth() - 3));
+            startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
             break;
         case 'year':
-            startDate = new Date(now.setFullYear(now.getFullYear() - 1));
+            startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+            break;
+        default:
+            startDate = new Date(0); // Prend en compte tout l'historique
             break;
     }
 
@@ -320,6 +341,7 @@ function resetDailyCounters() {
         saveToFirebase();
         localStorage.setItem('lastResetDate', now.toDateString());
         updateUI();
+        loadHistoryFromFirebase(); // Recharger l'historique pour s'assurer qu'il est bien affiché
         displayHistory(); // Afficher l'historique mis à jour
         generateReport();
         calculateTrends();
