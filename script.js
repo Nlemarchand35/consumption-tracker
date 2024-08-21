@@ -227,6 +227,7 @@ function generateWeeklyReport() {
     // Vérifiez si un graphique existe déjà, et s'il existe, détruisez-le
     if (chartInstance) {
         chartInstance.destroy();
+        chartInstance = null;  // Assurez-vous de réinitialiser l'instance
     }
 
     // Créez un nouveau graphique et stockez l'instance dans la variable chartInstance
@@ -281,6 +282,7 @@ function filterHistory(period) {
     // Assurez-vous de détruire le graphique avant de créer un nouveau
     if (chartInstance) {
         chartInstance.destroy();
+        chartInstance = null;  // Réinitialisez l'instance après la destruction
     }
 
     displayHistory(filteredHistory);
@@ -316,6 +318,7 @@ function generateReport(filteredHistory = history) {
     // Vérifiez si un graphique existe déjà, et s'il existe, détruisez-le
     if (chartInstance) {
         chartInstance.destroy();
+        chartInstance = null;  // Réinitialisez l'instance après la destruction
     }
 
     chartInstance = new Chart(ctx, {
