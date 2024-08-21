@@ -224,10 +224,12 @@ function generateWeeklyReport() {
 
     const ctx = document.getElementById('reportChart').getContext('2d');
 
+    // Vérifiez si un graphique existe déjà, et s'il existe, détruisez-le
     if (chartInstance) {
         chartInstance.destroy();
     }
 
+    // Créez un nouveau graphique et stockez l'instance dans la variable chartInstance
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -306,6 +308,7 @@ function generateReport(filteredHistory = history) {
 
     const ctx = document.getElementById('reportChart').getContext('2d');
 
+    // Vérifiez si un graphique existe déjà, et s'il existe, détruisez-le
     if (chartInstance) {
         chartInstance.destroy();
     }
