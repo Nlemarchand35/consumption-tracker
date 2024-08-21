@@ -10,29 +10,32 @@ let counters = {
 };
 
 let history = [];
+let chartInstance = null;  // Variable pour stocker l'instance du graphique
 
 // Initialisation de l'interface utilisateur
 function initUI() {
     const items = ['cafes', 'cigarettes', 'bieres', 'junkfood', 'cocazero', 'painblanc'];
-    const itemNames = ['Cafés', 'Cigarettes', 'Bières', 'Junk Food', 'Coca Zéro', 'Pain Blanc'];
+    const itemNames = ['☕ Cafés', '🚬 Cigarettes', '🍺 Bières', '🍔 Junk Food', '🥤 Coca Zéro', '🍞 Pain Blanc'];
     const trackersDiv = document.getElementById('trackers');
 
     items.forEach((item, index) => {
         const trackerDiv = document.createElement('div');
-        trackerDiv.className = 'tracker';
+        trackerDiv.className = 'tracker d-flex align-items-center mb-3';
 
         const label = document.createElement('span');
-        label.textContent = itemNames[index] + ':';
+        label.className = 'me-2';  // Ajout de marge pour l'espacement
+        label.textContent = itemNames[index];
         trackerDiv.appendChild(label);
 
         const minusButton = document.createElement('button');
-        minusButton.className = 'btn btn-outline-danger';
+        minusButton.className = 'btn btn-outline-danger me-2';
         minusButton.textContent = '-';
         minusButton.onclick = () => decrement(item);
         trackerDiv.appendChild(minusButton);
 
         const countSpan = document.createElement('span');
         countSpan.id = item + 'Count';
+        countSpan.className = 'me-2 fw-bold';  // Ajout de marge et texte en gras
         countSpan.textContent = counters[item];
         trackerDiv.appendChild(countSpan);
 
@@ -220,7 +223,12 @@ function generateWeeklyReport() {
     const dataPoints = last7Days.map(item => item.totalPoints);
 
     const ctx = document.getElementById('reportChart').getContext('2d');
-    new Chart(ctx, {
+
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -297,7 +305,12 @@ function generateReport(filteredHistory = history) {
     const dataPoints = filteredHistory.map(item => item.totalPoints);
 
     const ctx = document.getElementById('reportChart').getContext('2d');
-    new Chart(ctx, {
+
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
