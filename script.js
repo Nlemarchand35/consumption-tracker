@@ -278,6 +278,11 @@ function filterHistory(period) {
     const filteredHistory = history.filter(item => new Date(item.date) >= startDate);
     console.log(`Filtered history for ${period}:`, filteredHistory);
 
+    // Assurez-vous de détruire le graphique avant de créer un nouveau
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
     displayHistory(filteredHistory);
     generateReport(filteredHistory);
 }
